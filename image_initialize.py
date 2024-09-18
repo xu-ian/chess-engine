@@ -24,6 +24,7 @@ class Images:
       match i % 13:
         case 0:
           piece = Image.open(PREFIX + 'white_rook.png')
+          print(piece.mode)
         case 1:
           piece = Image.open(PREFIX + 'white_knight.png')
         case 2:
@@ -56,18 +57,18 @@ class Images:
         if piece != blank:
           background.paste(piece, (0,0),piece)
         self.tile_arr[i] = ImageTk.PhotoImage(background)
-      self.tile_arr[26] = PhotoImage(file=PREFIX + 'white_rook.png')
-      self.tile_arr[27] = PhotoImage(file=PREFIX + 'white_knight.png')
-      self.tile_arr[28] = PhotoImage(file=PREFIX + 'white_bishop.png')
-      self.tile_arr[29] = PhotoImage(file=PREFIX + 'white_queen.png')
-      self.tile_arr[30] = PhotoImage(file=PREFIX + 'white_king.png')
-      self.tile_arr[31] = PhotoImage(file=PREFIX + 'white_pawn.png')
-      self.tile_arr[32] = PhotoImage(file=PREFIX + 'black_rook.png')
-      self.tile_arr[33] = PhotoImage(file=PREFIX + 'black_knight.png')
-      self.tile_arr[34] = PhotoImage(file=PREFIX + 'black_bishop.png')
-      self.tile_arr[35] = PhotoImage(file=PREFIX + 'black_queen.png')
-      self.tile_arr[36] = PhotoImage(file=PREFIX + 'black_king.png')
-      self.tile_arr[37] = PhotoImage(file=PREFIX + 'black_pawn.png')
+    self.tile_arr[26] = PhotoImage(file=PREFIX + 'white_rook.png')
+    self.tile_arr[27] = PhotoImage(file=PREFIX + 'white_knight.png')
+    self.tile_arr[28] = PhotoImage(file=PREFIX + 'white_bishop.png')
+    self.tile_arr[29] = PhotoImage(file=PREFIX + 'white_queen.png')
+    self.tile_arr[30] = PhotoImage(file=PREFIX + 'white_king.png')
+    self.tile_arr[31] = PhotoImage(file=PREFIX + 'white_pawn.png')
+    self.tile_arr[32] = PhotoImage(file=PREFIX + 'black_rook.png')
+    self.tile_arr[33] = PhotoImage(file=PREFIX + 'black_knight.png')
+    self.tile_arr[34] = PhotoImage(file=PREFIX + 'black_bishop.png')
+    self.tile_arr[35] = PhotoImage(file=PREFIX + 'black_queen.png')
+    self.tile_arr[36] = PhotoImage(file=PREFIX + 'black_king.png')
+    self.tile_arr[37] = PhotoImage(file=PREFIX + 'black_pawn.png')
 
   def get_image(self, number):
     return self.tile_arr[number]
