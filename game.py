@@ -4,10 +4,14 @@ from tkinter import PhotoImage
 from movement import *
 import movement
 from image_initialize import Images
+from dbaccess import DB_Access
+import sys
 import time
 import random
 
-
+username = "default"
+password = "password"
+db_usage = False
 
 class Game:
   
@@ -21,7 +25,15 @@ class Game:
     #Diagnostic Variables
     self.count = 0
     self.elapsed = 0
-    self.elapsed2 = 0    
+    self.elapsed2 = 0
+    self.skip = 0
+
+    #Variable for CPU color
+    self.side = "black"
+
+    #Variable for database 
+    if db_usage:
+      self.db = DB_Access(username,password)
 
     #Sets up the root 
     self.root = Tk()
@@ -370,10 +382,27 @@ class Game:
     self.elapsed2 += (end_time_2 - end_time)
     return multiplier*(val + val2 + random.uniform(0,0.3))
 
+  def flip_side(self):
+    if self.side == "black":
+      self.side = "white"
+    else:
+      self.side = "black"
+
   def alphaBetaMax(self, alpha, beta, depth):
     if depth == 0:
       return (self.evaluate(-1),((0,0),(0,0)))
     best_value = (-9999999,((0,0),(0,0)))
+    self.flip_side()
+
+    #Returns the stored value from the database if the database 
+    #is enabled and the value exists 
+
+    if db_usage:
+      move = self.db.check_move(self.side,self.bitboard,depth)
+      if move != None:
+        self.skip += depth
+        return move
+    
     #Iterates through the whole grid and if it lands on a 
     #valid piece saves the valid moves in dgrid
     for i in range(8):
@@ -439,15 +468,30 @@ class Game:
                     alpha = score[0]
                   best_value = (alpha, (bgn,dst))
                 if score[0] >= beta:
+                  if db_usage and depth >= 2:
+                    self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
                   return score
     #print("Best value: ", best_value)
     #print(" ")
+    if db_usage and depth >= 2:
+      self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
     return best_value
 
   def alphaBetaMin(self, alpha, beta, depth):
     if depth == 0:
       return (self.evaluate(1),((0,0),(0,0)))
     best_value = (9999999, ((0,0),(0,0)))
+    
+    self.flip_side()
+
+    #Returns the stored value from the database if the database 
+    #is enabled and the value exists 
+    if db_usage:
+      move = self.db.check_move(self.side,self.bitboard,depth)
+      if move != None:
+        self.skip += depth
+        return move
+    
     for i in range(8):
       for j in range(8):
         bgn = (i,j)
@@ -509,9 +553,13 @@ class Game:
                     beta = score[0]
                   best_value = (beta,(bgn,dst))
                 if score[0] <= alpha:
+                  if db_usage and depth >= 2:
+                    self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
                   return score
     #print("Returning: ", best_value)
     #print(" ")
+    if db_usage and depth >= 2:
+      self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
     return best_value
 
   def set_grid(self,e,x,y):
@@ -594,21 +642,25 @@ class Game:
               return
             #time.sleep(0.5)
             stt = time.perf_counter()
-            #score = self.alphaBetaMax(-99999999, 99999999, 4)
+            score = self.alphaBetaMax(-99999999, 99999999, 4)
             elp = time.perf_counter() - stt
-            print("Total Elapsed Time: ", elp)
-            #bgn = score[1][0]
-            #dst = score[1][1]
+            print("Total Elapsed Time: ", elp, ", Skips: ", self.skip)
+            self.skip = 0
+            self.count = 0
+            self.elapsed = 0
+            self.elapsed2 = 0
+            bgn = score[1][0]
+            dst = score[1][1]
             dstbrd = -1
-            #for i in range(12):
-            #  if self.bitboard[i].test_bit(bgn):
-            #    dstbrd = i
-            #    self.bitboard[i].move_bit(bgn,dst)
-            #  if dstbrd != i and self.bitboard[i].test_bit(dst):
-            #    self.bitboard[i].reset_bit(dst)
-            #self.update_joinboards()
-            #self.refresh_grid()
-            #print(score)
+            for i in range(12):
+              if self.bitboard[i].test_bit(bgn):
+                dstbrd = i
+                self.bitboard[i].move_bit(bgn,dst)
+              if dstbrd != i and self.bitboard[i].test_bit(dst):
+                self.bitboard[i].reset_bit(dst)
+            self.update_joinboards()
+            self.refresh_grid()
+            print(score)
             if self.conclude_game():
               return
     self.refresh_grid()
@@ -629,5 +681,13 @@ class Game:
 
 
 if __name__ == "__main__":
+  if len(sys.argv) > 1:
+    db_usage = True
+    if len(sys.argv) == 3:
+      username = sys.argv[1]
+      password = sys.argv[2]
+    else:
+      print("Expected usage: python game.py [username] [password]")
+      sys.exit(1)  
   game = Game()
   game.start_game()
