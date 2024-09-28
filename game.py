@@ -9,10 +9,6 @@ import sys
 import time
 import random
 
-username = "default"
-password = "password"
-db_usage = False
-
 class Game:
   
   def __init__(self):
@@ -32,8 +28,8 @@ class Game:
     self.side = "black"
 
     #Variable for database 
-    if db_usage:
-      self.db = DB_Access(username,password)
+    self.db_usage = False
+    self.db = None
 
     #Sets up the root 
     self.root = Tk()
@@ -73,6 +69,10 @@ class Game:
         self.set_tile(x,y,image_number)
         self.arr[x][y].bind('<ButtonRelease-1>', self.move_to_dest)
     self.dpiece = Label(self.mainframe, text = "Held Piece")
+
+  def db_setup(username, password):
+    self.db_usage = True
+    self.db = DB_Access(username,password)
 
   def bind_press(self,x,y):
     if x == 0:
@@ -397,7 +397,7 @@ class Game:
     #Returns the stored value from the database if the database 
     #is enabled and the value exists 
 
-    if db_usage:
+    if depth > 1 and self.db_usage:
       move = self.db.check_move(self.side,self.bitboard,depth)
       if move != None:
         self.skip += depth
@@ -468,12 +468,12 @@ class Game:
                     alpha = score[0]
                   best_value = (alpha, (bgn,dst))
                 if score[0] >= beta:
-                  if db_usage and depth >= 2:
+                  if self.db_usage and depth >= 2:
                     self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
                   return score
     #print("Best value: ", best_value)
     #print(" ")
-    if db_usage and depth >= 2:
+    if self.db_usage and depth >= 2:
       self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
     return best_value
 
@@ -486,7 +486,7 @@ class Game:
 
     #Returns the stored value from the database if the database 
     #is enabled and the value exists 
-    if db_usage:
+    if depth > 1 and self.db_usage:
       move = self.db.check_move(self.side,self.bitboard,depth)
       if move != None:
         self.skip += depth
@@ -553,12 +553,12 @@ class Game:
                     beta = score[0]
                   best_value = (beta,(bgn,dst))
                 if score[0] <= alpha:
-                  if db_usage and depth >= 2:
+                  if self.db_usage and depth >= 2:
                     self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
                   return score
     #print("Returning: ", best_value)
     #print(" ")
-    if db_usage and depth >= 2:
+    if self.db_usage and depth >= 2:
       self.db.save_move(self.side,self.bitboard,depth,score[1],score[0])
     return best_value
 
@@ -575,6 +575,7 @@ class Game:
 
   def move_piece(self, e, x, y):
     self.dpiece.place(x = e.x+(y*67), y = e.y+(x*67), anchor = CENTER)
+  
   def set_tile(self, x,y,img):
     self.arr[x][y]['image']=self.images.get_image(img)
     self.pngarr[x][y] = img
@@ -681,13 +682,11 @@ class Game:
 
 
 if __name__ == "__main__":
+  game = Game()
   if len(sys.argv) > 1:
-    db_usage = True
     if len(sys.argv) == 3:
-      username = sys.argv[1]
-      password = sys.argv[2]
+      game.db_setup(sys.argv[1], sys.argv[2])
     else:
       print("Expected usage: python game.py [username] [password]")
-      sys.exit(1)  
-  game = Game()
+      sys.exit(1)
   game.start_game()
